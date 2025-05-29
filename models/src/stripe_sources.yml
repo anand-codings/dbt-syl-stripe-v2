@@ -1,7 +1,7 @@
 version: 2
 sources:
   - name: stripe
-    database: your_postgres_database
+    database: stripe_warehouse
     schema: public
     tables:
       - name: charges_view
