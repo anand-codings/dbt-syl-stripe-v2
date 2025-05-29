@@ -1,0 +1,26 @@
+version: 2
+sources:
+  - name: stripe
+    database: your_postgres_database
+    schema: public
+    tables:
+      - name: charges_view
+        description: "Stripe charge records from Postgres"
+      - name: coupons
+        description: "Stripe coupons from Postgres"
+      - name: customers_view
+        description: "Stripe customer records from Postgres"
+      - name: invoices_view
+        description: "Stripe invoice records from Postgres"
+      - name: payment_intents_view
+        description: "Stripe payment intent records from Postgres"
+      - name: plans
+        description: "Stripe subscription plans from Postgres"
+      - name: prices
+        description: "Stripe pricing data from Postgres"
+      - name: products
+        description: "Stripe product catalog from Postgres"
+      - name: refunds
+        description: "Stripe refund records from Postgres"
+      - name: subscriptions
+        description: "Stripe subscription records from Postgres" 

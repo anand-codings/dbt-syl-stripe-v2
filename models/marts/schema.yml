@@ -1,0 +1,373 @@
+version: 2
+
+models:
+  - name: mart_charges_summary
+    description: "Monthly aggregated charge metrics including volume, revenue, and customer counts"
+    columns:
+      - name: period_month
+        description: "Month of the charges"
+        tests:
+          - not_null
+      - name: total_charges
+        description: "Total number of charges in the month"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total revenue from charges in the month"
+        tests:
+          - not_null
+
+  - name: mart_revenue_by_month
+    description: "Monthly revenue analysis with customer metrics and growth rates"
+    columns:
+      - name: period_month
+        description: "Month of the revenue"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total revenue for the month"
+        tests:
+          - not_null
+      - name: unique_customers
+        description: "Number of unique customers with revenue"
+        tests:
+          - not_null
+
+  - name: mart_mrr
+    description: "Monthly Recurring Revenue analysis with subscription metrics"
+    columns:
+      - name: period_month
+        description: "Month of the MRR calculation"
+        tests:
+          - not_null
+      - name: total_mrr
+        description: "Total Monthly Recurring Revenue"
+        tests:
+          - not_null
+      - name: active_subscribers
+        description: "Number of active subscribers"
+        tests:
+          - not_null
+
+  - name: mart_arr
+    description: "Annual Recurring Revenue metrics with growth calculations"
+    columns:
+      - name: period_month
+        description: "Month of the ARR calculation"
+        tests:
+          - not_null
+      - name: total_arr
+        description: "Total Annual Recurring Revenue"
+        tests:
+          - not_null
+      - name: active_subscribers
+        description: "Number of active subscribers"
+        tests:
+          - not_null
+
+  - name: mart_churn_rate
+    description: "Customer and revenue churn analysis by month"
+    columns:
+      - name: period_month
+        description: "Month of the churn analysis"
+        tests:
+          - not_null
+      - name: customer_churn_rate_percent
+        description: "Percentage of customers who churned"
+        tests:
+          - not_null
+      - name: revenue_churn_rate_percent
+        description: "Percentage of revenue lost to churn"
+        tests:
+          - not_null
+
+  - name: mart_customer_lifetime_value
+    description: "Customer lifetime value analysis with predictions and segmentation"
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: total_predicted_clv
+        description: "Total predicted customer lifetime value"
+        tests:
+          - not_null
+      - name: customer_type
+        description: "Type of customer (Transactional, Subscription, Hybrid)"
+        tests:
+          - not_null
+
+  - name: mart_coupon_usage
+    description: "Coupon performance and usage analytics"
+    columns:
+      - name: coupon_identifier
+        description: "Coupon identifier or code"
+        tests:
+          - not_null
+      - name: total_uses_in_charges
+        description: "Number of times coupon was used in charges"
+        tests:
+          - not_null
+      - name: total_revenue_with_coupon
+        description: "Total revenue generated with this coupon"
+        tests:
+          - not_null
+
+  - name: mart_refund_rate
+    description: "Refund analysis including rates, reasons, and trends"
+    columns:
+      - name: period_month
+        description: "Month of the refund analysis"
+        tests:
+          - not_null
+      - name: refund_rate_percent
+        description: "Percentage of charges that were refunded"
+        tests:
+          - not_null
+      - name: total_refunds
+        description: "Total number of refunds"
+        tests:
+          - not_null
+
+  - name: mart_failed_payments
+    description: "Failed payment analysis including failure types and rates"
+    columns:
+      - name: period_month
+        description: "Month of the failure analysis"
+        tests:
+          - not_null
+      - name: charge_failure_rate_percent
+        description: "Percentage of charges that failed"
+        tests:
+          - not_null
+      - name: total_failed_charges
+        description: "Total number of failed charges"
+        tests:
+          - not_null
+
+  - name: mart_cohort_analysis
+    description: "Customer cohort retention and revenue analysis"
+    columns:
+      - name: activation_month
+        description: "Month when the cohort was activated"
+        tests:
+          - not_null
+      - name: period_number
+        description: "Number of months since activation"
+        tests:
+          - not_null
+      - name: retention_rate_percent
+        description: "Percentage of cohort still active"
+        tests:
+          - not_null
+
+  - name: mart_subscription_status
+    description: "Current subscription health and status analysis"
+    columns:
+      - name: subscription_id
+        description: "Unique subscription identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer who owns the subscription"
+        tests:
+          - not_null
+      - name: health_status
+        description: "Current health status of the subscription"
+        tests:
+          - not_null
+
+  # New Enhanced Mart Models
+  - name: mart_monthly_revenue
+    description: "Comprehensive monthly revenue analysis with growth metrics, refund tracking, and transaction insights"
+    columns:
+      - name: period_month
+        description: "Month of the revenue analysis"
+        tests:
+          - not_null
+      - name: currency
+        description: "Currency of the transactions"
+        tests:
+          - not_null
+      - name: gross_revenue
+        description: "Total gross revenue before refunds"
+        tests:
+          - not_null
+      - name: net_revenue
+        description: "Net revenue after refunds"
+        tests:
+          - not_null
+      - name: revenue_growth_percent
+        description: "Month-over-month revenue growth percentage"
+
+  - name: mart_daily_revenue_dashboard
+    description: "Daily revenue dashboard with payment method analysis, success rates, and rolling averages"
+    columns:
+      - name: revenue_date
+        description: "Date of the revenue analysis"
+        tests:
+          - not_null
+      - name: currency
+        description: "Currency of the transactions"
+        tests:
+          - not_null
+      - name: success_rate_percent
+        description: "Daily payment success rate percentage"
+        tests:
+          - not_null
+      - name: rolling_7day_net_revenue
+        description: "7-day rolling average of net revenue"
+
+  - name: mart_customer_ltv_analysis
+    description: "Comprehensive customer lifetime value analysis with RFM components, health scoring, and behavioral segmentation"
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: total_spent
+        description: "Total amount spent by customer"
+        tests:
+          - not_null
+      - name: customer_health_score
+        description: "Customer health score from 0-100"
+        tests:
+          - not_null
+      - name: predicted_annual_value
+        description: "Predicted annual customer value"
+      - name: customer_type
+        description: "Customer classification based on behavior"
+        tests:
+          - not_null
+
+  - name: mart_customer_segmentation
+    description: "Advanced customer segmentation using RFM analysis with actionable recommendations and cohort insights"
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: rfm_segment
+        description: "RFM-based customer segment"
+        tests:
+          - not_null
+      - name: segment_priority
+        description: "Business priority level of the segment"
+        tests:
+          - not_null
+      - name: recommended_action
+        description: "Recommended marketing/retention action"
+        tests:
+          - not_null
+      - name: acquisition_cohort
+        description: "Month when customer was acquired"
+
+  - name: mart_subscription_metrics_enhanced
+    description: "Enhanced subscription analytics with trial conversion, churn analysis, billing cycle insights, and health scoring"
+    columns:
+      - name: period_month
+        description: "Month of the subscription analysis"
+        tests:
+          - not_null
+      - name: product_name
+        description: "Name of the product"
+      - name: status_category
+        description: "Subscription status category"
+        tests:
+          - not_null
+      - name: trial_conversion_rate_percent
+        description: "Trial to paid conversion rate"
+      - name: product_health_score
+        description: "Product health score from 0-100"
+
+  - name: mart_product_revenue_analysis
+    description: "Product performance analysis with subscription metrics, trial conversions, and lifecycle stage classification"
+    columns:
+      - name: product_id
+        description: "Unique product identifier"
+        tests:
+          - not_null
+      - name: product_name
+        description: "Product name"
+        tests:
+          - not_null
+      - name: period_month
+        description: "Month of the analysis"
+        tests:
+          - not_null
+      - name: active_subscriptions
+        description: "Number of active subscriptions"
+        tests:
+          - not_null
+      - name: product_lifecycle_stage
+        description: "Current lifecycle stage of the product"
+        tests:
+          - not_null
+
+  - name: mart_payment_success_analysis
+    description: "Payment method performance analysis with failure categorization, risk assessment, and success rate benchmarking"
+    columns:
+      - name: period_month
+        description: "Month of the payment analysis"
+        tests:
+          - not_null
+      - name: payment_method_type
+        description: "Type of payment method"
+        tests:
+          - not_null
+      - name: success_rate_percent
+        description: "Payment success rate percentage"
+        tests:
+          - not_null
+      - name: performance_rating
+        description: "Performance rating (Excellent/Good/Fair/Poor)"
+        tests:
+          - not_null
+      - name: failure_category
+        description: "Categorized failure reason"
+
+  - name: mart_refund_analysis_enhanced
+    description: "Comprehensive refund analysis with timing patterns, customer behavior insights, and risk categorization"
+    columns:
+      - name: period_month
+        description: "Month of the refund analysis"
+        tests:
+          - not_null
+      - name: refund_reason_category
+        description: "Categorized refund reason"
+        tests:
+          - not_null
+      - name: refund_type
+        description: "Type of refund (Full/Partial)"
+        tests:
+          - not_null
+      - name: refund_rate_by_amount_percent
+        description: "Refund rate as percentage of original amount"
+      - name: refund_risk_level
+        description: "Risk level assessment"
+        tests:
+          - not_null
+
+  - name: mart_business_kpi_dashboard
+    description: "Executive dashboard with comprehensive business KPIs, health scoring, and cross-functional metrics"
+    columns:
+      - name: period_month
+        description: "Month of the KPI analysis"
+        tests:
+          - not_null
+      - name: total_net_revenue
+        description: "Total net revenue for the month"
+      - name: revenue_growth_percent
+        description: "Month-over-month revenue growth"
+      - name: business_health_score
+        description: "Overall business health score (0-100)"
+        tests:
+          - not_null
+      - name: business_health_category
+        description: "Business health category rating"
+        tests:
+          - not_null 

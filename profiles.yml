@@ -1,0 +1,12 @@
+stripe_bigquery:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: your-gcp-project-id
+      dataset: stripe_models
+      threads: 4
+      keyfile: /path/to/service-account.json
+      timeout_seconds: 300
+      location: US 

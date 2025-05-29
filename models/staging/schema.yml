@@ -1,0 +1,114 @@
+version: 2
+
+models:
+  - name: stg_charges_view
+    description: "Cast and clean charge data for BigQuery"
+    columns:
+      - name: id
+        description: "Primary identifier for the charge"
+        tests:
+          - not_null
+          - unique
+      - name: amount
+        description: "Amount intended to be collected (in cents)"
+        tests:
+          - not_null
+
+  - name: stg_coupons
+    description: "Cast and clean coupon data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_customers_view
+    description: "Cast and clean customer data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_invoices_view
+    description: "Cast and clean invoice data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_payment_intents_view
+    description: "Cast and clean payment intent data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_plans
+    description: "Cast and clean subscription plan data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_prices
+    description: "Cast and clean pricing data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_products
+    description: "Cast and clean product data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_refunds
+    description: "Cast and clean refund data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null
+
+  - name: stg_subscriptions
+    description: "Cast and clean subscription data for BigQuery"
+    columns:
+      - name: id
+        tests:
+          - not_null
+          - unique
+      - name: stripe_id
+        tests:
+          - not_null 
