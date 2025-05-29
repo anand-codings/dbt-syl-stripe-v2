@@ -2,7 +2,7 @@ name: stripe_transform
 version: '1.0'
 config-version: 2
 profile: stripe_bigquery
-source-paths: [models]
+model-paths: [models]
 analysis-paths: [analysis]
 target-path: target
 clean-targets: ['target', 'dbt_modules']
