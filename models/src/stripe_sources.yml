@@ -1,26 +1,26 @@
 version: 2
 sources:
   - name: stripe
-    database: stripe_warehouse
-    schema: public
+    database: data-engineering-big-query
+    schema: stripe_v3
     tables:
       - name: charges_view
-        description: "Stripe charge records from Postgres"
+        description: "Stripe charge records from BigQuery"
       - name: coupons
-        description: "Stripe coupons from Postgres"
+        description: "Stripe coupons from BigQuery"
       - name: customers_view
-        description: "Stripe customer records from Postgres"
+        description: "Stripe customer records from BigQuery"
       - name: invoices_view
-        description: "Stripe invoice records from Postgres"
+        description: "Stripe invoice records from BigQuery"
       - name: payment_intents_view
-        description: "Stripe payment intent records from Postgres"
+        description: "Stripe payment intent records from BigQuery"
       - name: plans
-        description: "Stripe subscription plans from Postgres"
+        description: "Stripe subscription plans from BigQuery"
       - name: prices
-        description: "Stripe pricing data from Postgres"
+        description: "Stripe pricing data from BigQuery"
       - name: products
-        description: "Stripe product catalog from Postgres"
+        description: "Stripe product catalog from BigQuery"
       - name: refunds
-        description: "Stripe refund records from Postgres"
+        description: "Stripe refund records from BigQuery"
       - name: subscriptions
-        description: "Stripe subscription records from Postgres" 
+        description: "Stripe subscription records from BigQuery" 

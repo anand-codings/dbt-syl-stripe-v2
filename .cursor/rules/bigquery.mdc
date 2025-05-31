@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Follow the below instructions to optimize the SQL query then lead comments at the top in SQL comments to suggest potential optimizations at the datawarehouse level.
+
+General SQL Optimizations
+These strategies apply broadly to SQL query writing, regardless of the underlying data warehouse.
+- Avoid SELECT *: Explicitly list only the columns you need to prevent scanning unnecessary data.
+- Filter Early and Often: Apply WHERE clauses at the beginning of your queries to reduce the dataset size before complex operations.
+- Optimize Joins: Start joins with the larger table to potentially improve query performance and resource usage.
+- Be Judicious with ORDER BY: Apply ORDER BY sparingly and ideally only to the outermost query, as it can be a costly operation.
+- Prefer Native SQL UDFs: Choose native SQL User-Defined Functions over JavaScript UDFs for better performance and efficiency.
+- Understand LIMIT Clause Impact: The LIMIT clause only affects the number of rows returned, not the amount of data scanned or the query cost.
+Data Warehouse-Specific Steps (e.g., BigQuery)
+These strategies leverage features common in modern data warehouses to optimize costs and performance.
+- Use Partitioning: Divide large tables into smaller, segmented units based on a column (like date) to limit the data scanned during queries.
+- Implement Clustering: Organize data within partitions based on frequently queried columns to reduce the amount of data the data warehouse needs to read.
+- Pre-aggregate Data: Create summary tables for common metrics to avoid repeatedly running expensive queries on raw data.
+- Utilize Materialized Views: Pre-compute and store the results of frequent queries, allowing the data warehouse to serve those results without re-executing the original query.
+- Use Approximate Aggregations: Employ functions like APPROX_COUNT_DISTINCT() for large-scale counts when exact precision isn't critical, as they are more cost-effective.
+- Check Query Cost Before Execution: Use the dry run feature to estimate data processing for large queries and avoid unexpected charges.
+- Leverage Query Caching: Data warehouses automatically cache query results, returning them for free if the same query runs again within a short period and data hasn't changed.
+
+
+Readability
+To make financial figures easier to read in BigQuery, first round them to the nearest whole dollar. This can be achieved using the ROUND() function, which simplifies the numbers by removing decimal places if you specify zero decimal precision.
+
+Next, for larger numbers, introduce comma separators to mark thousands, millions, and so on. The FORMAT() function is useful here, allowing you to specify a pattern that includes these commas, making lengthy numbers much more scannable.
+
+Finally, prepend a dollar sign ($) to clearly indicate that the number represents a currency value. You can achieve this by using the CONCAT() function or the || operator to join the dollar symbol with your rounded and comma-separated number.
+
+

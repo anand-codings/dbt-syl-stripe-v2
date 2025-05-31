@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_charges_view
+  - name: charges_view
     description: "Cast and clean charge data for BigQuery"
     columns:
       - name: id
@@ -14,7 +14,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_coupons
+  - name: coupons
     description: "Cast and clean coupon data for BigQuery"
     columns:
       - name: id
@@ -25,7 +25,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_customers_view
+  - name: customers_view
     description: "Cast and clean customer data for BigQuery"
     columns:
       - name: id
@@ -36,7 +36,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_invoices_view
+  - name: invoices_view
     description: "Cast and clean invoice data for BigQuery"
     columns:
       - name: id
@@ -47,7 +47,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_payment_intents_view
+  - name: payment_intents_view
     description: "Cast and clean payment intent data for BigQuery"
     columns:
       - name: id
@@ -58,7 +58,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_plans
+  - name: plans
     description: "Cast and clean subscription plan data for BigQuery"
     columns:
       - name: id
@@ -69,7 +69,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_prices
+  - name: prices
     description: "Cast and clean pricing data for BigQuery"
     columns:
       - name: id
@@ -80,7 +80,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_products
+  - name: products
     description: "Cast and clean product data for BigQuery"
     columns:
       - name: id
@@ -91,7 +91,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_refunds
+  - name: refunds
     description: "Cast and clean refund data for BigQuery"
     columns:
       - name: id
@@ -102,7 +102,7 @@ models:
         tests:
           - not_null
 
-  - name: stg_subscriptions
+  - name: subscriptions
     description: "Cast and clean subscription data for BigQuery"
     columns:
       - name: id

@@ -5,10 +5,15 @@ profile: stripe_bigquery
 model-paths: [models]
 analysis-paths: [analysis]
 target-path: target
-clean-targets: ['target', 'dbt_modules']
+clean-targets: ['target', 'dbt_packages']
+log-path: logs
+packages-install-path: dbt_packages
 
 models:
   stripe_transform:
-    staging:
+    staging_stripe:
       +materialized: view
       +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

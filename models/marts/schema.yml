@@ -1,0 +1,245 @@
+version: 2
+
+models:
+  - name: mart_monthly_subscription_mrr
+    description: "Monthly subscription MRR analysis showing active subscribers and revenue breakdown by billing cycle for the last 12 months"
+    columns:
+      - name: month
+        description: "Month start date (first day of the month)"
+        tests:
+          - not_null
+          - unique
+      - name: monthly_active_subscribers
+        description: "Number of distinct customers with active monthly subscriptions in this month"
+        tests:
+          - not_null
+      - name: annual_active_subscribers
+        description: "Number of distinct customers with active annual subscriptions in this month"
+        tests:
+          - not_null
+      - name: total_active_subscribers
+        description: "Total number of distinct active subscribers (monthly + annual) in this month"
+        tests:
+          - not_null
+      - name: monthly_revenue
+        description: "Revenue from monthly subscription charges in this month (in dollars)"
+        tests:
+          - not_null
+      - name: annual_revenue
+        description: "Revenue from annual subscription charges in this month (in dollars)"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total subscription revenue in this month (monthly + annual, in dollars)"
+        tests:
+          - not_null
+
+  - name: mart_annual_subscription_mrr
+    description: "Annual subscription MRR analysis showing active subscribers, revenue breakdown, and ARPU by billing cycle for the last 5 years"
+    columns:
+      - name: year
+        description: "Year start date (first day of the year)"
+        tests:
+          - not_null
+          - unique
+      - name: monthly_active_subscribers
+        description: "Number of distinct customers with active monthly subscriptions in this year"
+        tests:
+          - not_null
+      - name: annual_active_subscribers
+        description: "Number of distinct customers with active annual subscriptions in this year"
+        tests:
+          - not_null
+      - name: total_active_subscribers
+        description: "Total number of distinct active subscribers (monthly + annual) in this year"
+        tests:
+          - not_null
+      - name: monthly_revenue
+        description: "Revenue from monthly subscription charges in this year (in dollars)"
+        tests:
+          - not_null
+      - name: annual_revenue
+        description: "Revenue from annual subscription charges in this year (in dollars)"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total subscription revenue in this year (monthly + annual, in dollars)"
+        tests:
+          - not_null
+      - name: monthly_arpu
+        description: "Average revenue per user for monthly subscribers in this year (in dollars)"
+        tests:
+          - not_null
+      - name: annual_arpu
+        description: "Average revenue per user for annual subscribers in this year (in dollars)"
+        tests:
+          - not_null
+      - name: total_arpu
+        description: "Average revenue per user across all subscribers in this year (in dollars)"
+        tests:
+          - not_null
+
+  - name: mart_subscription_mrr_unified
+    description: "Unified subscription MRR analysis combining both monthly (24 months) and annual (5 years) metrics in a single table with period_type to distinguish between views"
+    columns:
+      - name: period_start
+        description: "Start date of the period (first day of month for monthly, first day of year for annual)"
+        tests:
+          - not_null
+      - name: period_type
+        description: "Type of period: 'monthly' or 'annual'"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['monthly', 'annual']
+      - name: period_year
+        description: "Year component of the period"
+        tests:
+          - not_null
+      - name: period_month
+        description: "Month component (1-12) for monthly periods, NULL for annual periods"
+      - name: monthly_active_subscribers
+        description: "Number of distinct customers with active monthly subscriptions in this period"
+        tests:
+          - not_null
+      - name: annual_active_subscribers
+        description: "Number of distinct customers with active annual subscriptions in this period"
+        tests:
+          - not_null
+      - name: total_active_subscribers
+        description: "Total number of distinct active subscribers (monthly + annual) in this period"
+        tests:
+          - not_null
+      - name: monthly_revenue
+        description: "Revenue from monthly subscription charges in this period (in dollars)"
+        tests:
+          - not_null
+      - name: annual_revenue
+        description: "Revenue from annual subscription charges in this period (in dollars)"
+        tests:
+          - not_null
+      - name: total_revenue
+        description: "Total subscription revenue in this period (monthly + annual, in dollars)"
+        tests:
+          - not_null
+      - name: monthly_arpu
+        description: "Average revenue per user for monthly subscribers in this period (in dollars)"
+        tests:
+          - not_null
+      - name: annual_arpu
+        description: "Average revenue per user for annual subscribers in this period (in dollars)"
+        tests:
+          - not_null
+      - name: total_arpu
+        description: "Average revenue per user across all subscribers in this period (in dollars)"
+        tests:
+          - not_null
+      - name: monthly_mrr
+        description: "Monthly Recurring Revenue - only populated for monthly periods (in dollars)"
+      - name: annual_recurring_revenue
+        description: "Annual Recurring Revenue - only populated for annual periods (in dollars)"
+
+  - name: mart_customer_churn_analysis
+    description: "Monthly customer churn and revenue impact analysis for the last 6 months, segmenting by churn type and quantifying revenue impact through customer lifetime value metrics"
+    columns:
+      - name: churn_month
+        description: "Month when customers churned (YYYY-MM format) or 'TOTAL' for aggregate row"
+        tests:
+          - not_null
+      - name: churned_customers_count
+        description: "Total number of customers who canceled in this month"
+        tests:
+          - not_null
+      - name: total_churned_value
+        description: "Total lifetime value of churned customers (formatted as currency)"
+        tests:
+          - not_null
+      - name: avg_customer_value
+        description: "Average lifetime spend per churned customer (formatted as currency)"
+        tests:
+          - not_null
+      - name: payment_failure_churns
+        description: "Number of customers who churned due to payment issues"
+        tests:
+          - not_null
+      - name: voluntary_churns
+        description: "Number of customers who actively requested cancellation"
+        tests:
+          - not_null
+      - name: payment_failure_churn_pct
+        description: "Percentage of churns due to payment failures"
+        tests:
+          - not_null
+      - name: voluntary_churn_pct
+        description: "Percentage of churns due to voluntary cancellations"
+        tests:
+          - not_null
+
+  - name: mart_customer_lifecycle_status
+    description: "Monthly customer lifecycle analysis tracking transitions through key stages (New, Active, Reactivated, Churned) for the last 36 months"
+    columns:
+      - name: month_start
+        description: "Month start date (first day of the month)"
+        tests:
+          - not_null
+      - name: lifecycle_stage
+        description: "Customer lifecycle stage for this month"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['New', 'Active', 'Reactivated', 'Churned']
+      - name: customer_count
+        description: "Number of distinct customers in this lifecycle stage for this month"
+        tests:
+          - not_null
+
+  - name: mart_customer_segmentation
+    description: "Customer segmentation analysis grouping customers by subscription plan, tenure, LTM revenue, geography, and custom metadata attributes"
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: segment_plan_name
+        description: "Customer's latest subscription plan name or 'Unknown' if no subscription"
+        tests:
+          - not_null
+      - name: segment_billing_interval
+        description: "Customer's latest subscription billing interval (month/year) or 'Unknown'"
+        tests:
+          - not_null
+      - name: segment_current_subscription_status
+        description: "Current status of customer's latest subscription"
+        tests:
+          - not_null
+      - name: first_paid_charge_date
+        description: "Date of customer's first paid charge (for tenure calculation)"
+      - name: segment_customer_tenure
+        description: "Customer tenure segment based on time since first paid charge"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['No Paid Charges', '0-5 Months Tenure', '6-11 Months Tenure', '12-23 Months Tenure', '24+ Months Tenure']
+      - name: ltm_revenue
+        description: "Customer's Last Twelve Months revenue in dollars"
+        tests:
+          - not_null
+      - name: segment_ltm_revenue_tier
+        description: "Customer's LTM revenue tier segment"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['No LTM Revenue', 'LTM Revenue < $100', 'LTM Revenue $100-$499', 'LTM Revenue $500-$999', 'LTM Revenue $1000+']
+      - name: segment_geo_country
+        description: "Customer's country from latest invoice or 'Unknown'"
+        tests:
+          - not_null
+      - name: segment_metadata_tier
+        description: "Customer tier from metadata (if available)"
+      - name: segment_metadata_industry
+        description: "Industry segment from metadata (if available)"
+      - name: customer_created_at
+        description: "Timestamp when customer was created"
+        tests:
+          - not_null 
