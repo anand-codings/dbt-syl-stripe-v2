@@ -1,6 +1,6 @@
 {{ config(
     materialized='view',
-    schema='staging'
+    schema='stripe'
 ) }}
 
 select
