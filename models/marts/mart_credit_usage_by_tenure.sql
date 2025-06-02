@@ -14,10 +14,10 @@ first_paid AS (
 monthly_usage AS (
   SELECT
     user_id,
-    month,
+    DATE(month) AS month,
     SUM(credits_spent) AS total_credits_spent
   FROM {{ ref('mart_monthly_credit_usage') }}
-  GROUP BY user_id, month
+  GROUP BY user_id, DATE(month)
 ),
 
 usage_with_tenure AS (

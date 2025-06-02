@@ -3,7 +3,7 @@
 WITH usage_events AS (
   SELECT
     ch.user_id,
-    DATE_TRUNC(ch.created_at, MONTH) AS month,
+    DATE_TRUNC(ch.created_at_ts, MONTH) AS month,
     ch.creditable_type      AS service_type,
     SUM(ch.amount * -1)     AS credits_spent,
     COUNT(*)                AS usage_count
@@ -11,7 +11,7 @@ WITH usage_events AS (
   JOIN {{ ref('credit_events') }} ce
     ON ch.credit_event_id = ce.credit_event_id
   WHERE ce.event_type = 'usage'
-  GROUP BY ch.user_id, DATE_TRUNC(ch.created_at, MONTH), ch.creditable_type
+  GROUP BY ch.user_id, DATE_TRUNC(ch.created_at_ts, MONTH), ch.creditable_type
 )
 
 SELECT

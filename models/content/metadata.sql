@@ -1,6 +1,6 @@
 {{ config(
     materialized='view',
-    schema='system'
+    schema='content'
 ) }}
 
 WITH raw AS (

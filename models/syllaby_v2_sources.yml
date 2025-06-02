@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: syllaby_v2
     description: "Raw data from the Syllaby V2 application database dump, ingested into BigQuery."
-    dataset: syllaby_v2
+    schema: syllaby_v2
     
     tables:
       - name: users
@@ -14,4 +14,23 @@ sources:
       - name: industries
       - name: industry_user
       - name: credit_events
-      - name: credit_histories 
+      - name: credit_histories
+      - name: taggables
+      - name: footages
+      - name: captions
+      - name: facelesses
+      - name: real_clones
+      - name: videos
+      - name: video_assets
+      - name: avatars
+      - name: metadata
+      - name: ideas
+      - name: questions
+      - name: templates
+      - name: keywords
+      - name: answers
+      - name: bookmarks
+      - name: related_topics
+      - name: keyword_user
+      - name: tags
+      - name: surveys 

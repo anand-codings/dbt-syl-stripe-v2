@@ -24,9 +24,9 @@ usage_with_plan AS (
     SELECT
       stripe_id   AS plan_stripe_id,
       CASE
-        WHEN amount >= 5000 AND interval = 'month' THEN 'Pro'
-        WHEN amount < 5000 AND interval = 'month' THEN 'Basic'
-        WHEN interval = 'year' THEN 'Enterprise'
+        WHEN amount >= 5000 AND `interval` = 'month' THEN 'Pro'
+        WHEN amount < 5000 AND `interval` = 'month' THEN 'Basic'
+        WHEN `interval` = 'year' THEN 'Enterprise'
         ELSE 'Other'
       END AS plan_tier
     FROM {{ ref('plans') }}

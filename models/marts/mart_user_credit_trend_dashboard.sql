@@ -20,9 +20,9 @@ video_counts AS (
   SELECT
     v.user_id,
     DATE_TRUNC(v.created_at, MONTH) AS month,
-    COUNT(*) FILTER (WHERE v.type = 'faceless')       AS faceless_count,
-    COUNT(*) FILTER (WHERE v.type = 'real_clone')     AS real_clone_count,
-    COUNT(*) FILTER (WHERE v.type NOT IN ('faceless','real_clone')) AS other_videos,
+    COUNTIF(v.type = 'faceless') AS faceless_count,
+    COUNTIF(v.type = 'real_clone') AS real_clone_count,
+    COUNTIF(v.type NOT IN ('faceless','real_clone')) AS other_videos,
     COUNT(*) AS total_video_count
   FROM {{ ref('videos') }} v
   GROUP BY v.user_id, DATE_TRUNC(v.created_at, MONTH)
@@ -41,9 +41,9 @@ plan_cte AS (
   SELECT
     stripe_id   AS plan_stripe_id,
     CASE
-      WHEN amount >= 5000 AND interval = 'month' THEN 'Pro'
-      WHEN amount < 5000 AND interval = 'month' THEN 'Basic'
-      WHEN interval = 'year' THEN 'Enterprise'
+      WHEN amount >= 5000 AND `interval` = 'month' THEN 'Pro'
+      WHEN amount < 5000 AND `interval` = 'month' THEN 'Basic'
+      WHEN `interval` = 'year' THEN 'Enterprise'
       ELSE 'Other'
     END AS plan_tier
   FROM {{ ref('plans') }}
@@ -74,7 +74,7 @@ SELECT
   COALESCE(v.other_videos, 0)        AS other_video_count,
 
   CASE
-    WHEN DATE_ADD(COALESCE(a.month, s.as_of_month, b.month, v.month), INTERVAL 1 MONTH) = c.churn_month
+    WHEN DATE_ADD(DATE(COALESCE(a.month, s.as_of_month, b.month, v.month)), INTERVAL 1 MONTH) = DATE(c.churn_month)
     THEN TRUE
     ELSE FALSE
   END AS next_month_churn_flag
@@ -100,4 +100,4 @@ LEFT JOIN plan_cte p
 
 LEFT JOIN churn_cte c
   ON COALESCE(a.user_id, s.user_id, b.user_id, v.user_id) = c.user_id
- AND DATE_ADD(COALESCE(a.month, s.as_of_month, b.month, v.month), INTERVAL 1 MONTH) = c.churn_month 
+ AND DATE_ADD(DATE(COALESCE(a.month, s.as_of_month, b.month, v.month)), INTERVAL 1 MONTH) = DATE(c.churn_month) 
