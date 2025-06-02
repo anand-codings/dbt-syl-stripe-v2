@@ -75,7 +75,7 @@ stripe_bigquery:
       type: bigquery
       method: service-account
       project: your-gcp-project-id        # ← Update this
-      dataset: stripe_models
+      dataset: syl
       threads: 4
       keyfile: /path/to/service-account.json  # ← Update this
       timeout_seconds: 300

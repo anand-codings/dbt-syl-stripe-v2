@@ -8,7 +8,7 @@ stripe_bigquery:
       type: bigquery
       method: service-account
       project: your-gcp-project-id        # ← Replace with your GCP project ID
-      dataset: stripe_models
+      dataset: syl
       threads: 4
       keyfile: /path/to/service-account.json  # ← Replace with path to your service account key
       timeout_seconds: 300
@@ -18,7 +18,7 @@ stripe_bigquery:
       type: bigquery
       method: service-account
       project: your-gcp-project-id        # ← Replace with your GCP project ID
-      dataset: stripe_models_prod
+      dataset: syl_dw_prod
       threads: 4
       keyfile: /path/to/service-account.json  # ← Replace with path to your service account key
       timeout_seconds: 300

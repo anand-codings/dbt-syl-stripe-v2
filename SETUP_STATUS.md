@@ -100,7 +100,7 @@ dbt run --select staging+
 ### BigQuery Connection
 - **Project**: `data-engineering-big-query`
 - **Source Dataset**: `stripe_v3`
-- **Target Dataset**: `stripe_models_dev` (dev), `stripe_models_prod` (prod)
+- **Target Dataset**: `syl` (dev), `syl_dw_prod` (prod)
 - **Authentication**: OAuth (Google Cloud SDK)
 - **Location**: US
 

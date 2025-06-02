@@ -72,7 +72,7 @@ You have several options for authentication:
          type: bigquery
          method: oauth
          project: your-gcp-project-id  # ← Your actual GCP project ID
-         dataset: stripe_models
+         dataset: syl
          threads: 4
          timeout_seconds: 300
          location: US
