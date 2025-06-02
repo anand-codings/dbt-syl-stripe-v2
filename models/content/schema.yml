@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  # Surveys Models
+  - name: surveys
+    description: "Dimension table containing all surveys."
+    columns:
+      - name: survey_id
+        tests: [not_null, unique]
+  - name: questions
+    description: "Contains all questions related to surveys."
+    columns:
+      - name: question_id
+        tests: [not_null, unique]
+      - name: survey_id
+        tests: [not_null]
+  - name: answers
+    description: "Contains user-submitted answers to survey questions."
+    columns:
+      - name: answer_id
+        tests: [not_null, unique]
+      - name: user_id
+        tests: [not_null]
+      - name: question_id
+        tests: [not_null]
+
+  # Tagging Models
+  - name: tags
+    description: "Dimension table of all user-created tags."
+    columns:
+      - name: tag_id
+        tests: [not_null, unique]
+  - name: taggables
+    description: "Association table linking tags to various content types (polymorphic)."
+    columns:
+      - name: taggable_record_id
+        tests: [not_null, unique]
+      - name: tag_id
+        tests: [not_null]
+      - name: taggable_id
+        tests: [not_null]
+  - name: bookmarks
+    description: "Contains user bookmarks of various content types (polymorphic)."
+    columns:
+      - name: bookmark_id
+        tests: [not_null, unique]
+      - name: user_id
+        tests: [not_null]
+      - name: bookmarked_model_id
+        tests: [not_null]
+
+  # Templates Models
+  - name: templates
+    description: "Dimension table containing all user-created and system templates."
+    columns:
+      - name: template_id
+        tests: [not_null, unique]
+
+  # SEO Models
+  - name: keywords
+    description: "Dimension table of all keywords."
+    columns:
+      - name: keyword_id
+        tests: [not_null, unique]
+  - name: ideas
+    description: "Contains generated ideas, typically linked to a keyword."
+    columns:
+      - name: idea_id
+        tests: [not_null, unique]
+  - name: related_topics
+    description: "Contains topics related to keywords or ideas."
+    columns:
+      - name: related_topic_id
+        tests: [not_null, unique]
+  - name: keyword_user
+    description: "Association table linking users to keywords."
+    columns:
+      - name: keyword_user_id
+        tests: [not_null, unique]
+      - name: user_id
+        tests: [not_null]
+      - name: keyword_id
+        tests: [not_null]
+
+  # System Models
+  - name: metadata
+    description: "A generic table for storing various types of key-value metadata from different providers."
+    columns:
+      - name: metadata_id
+        tests: [not_null, unique] 

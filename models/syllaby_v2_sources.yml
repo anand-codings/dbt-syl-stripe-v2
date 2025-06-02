@@ -1,0 +1,17 @@
+version: 2
+
+sources:
+  - name: syllaby_v2
+    description: "Raw data from the Syllaby V2 application database dump, ingested into BigQuery."
+    dataset: syllaby_v2
+    
+    tables:
+      - name: users
+      - name: social_accounts
+      - name: social_channels
+      - name: user_feedback
+      - name: trackers
+      - name: industries
+      - name: industry_user
+      - name: credit_events
+      - name: credit_histories 

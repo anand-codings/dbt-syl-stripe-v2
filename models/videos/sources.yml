@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: syllaby_v2
+    description: "Raw tables from Syllaby application database replicated into BigQuery"
+    schema: syllaybe_v2 # Updated to use syllaybe_v2 dataset
+    tables:
+      - name: videos
+      - name: video_assets
+      - name: footages
+      - name: captions
+      - name: real_clones
+      - name: avatars
+      - name: facelesses 

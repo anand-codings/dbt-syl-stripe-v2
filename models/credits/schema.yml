@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: credit_events
+    description: "A dimension table defining the types of credit events that can occur, such as bonuses or usage fees."
+    columns:
+      - name: credit_event_id
+        description: "The unique identifier for a credit event."
+        tests:
+          - not_null
+          - unique
+      - name: credit_event_name
+        description: "The display name of the credit event."
+      - name: event_type
+        description: "The classification of the event, such as 'bonus', 'penalty', or 'usage'."
+      - name: calculation_type
+        description: "The method used to calculate the credit amount, such as 'fixed' or 'percentage'."
+      - name: value
+        description: "The numerical value associated with the event for calculation purposes."
+      - name: min_amount
+        description: "The minimum qualifying amount for the event to be triggered."
+
+  - name: credit_histories
+    description: "A transactional log of all credit events that have occurred for each user. This model acts as a ledger."
+    columns:
+      - name: credit_history_id
+        description: "The unique identifier for a credit history record."
+        tests:
+          - not_null
+          - unique
+      - name: user_id
+        description: "The user associated with this credit transaction."
+        tests:
+          - not_null
+      - name: credit_event_id
+        description: "A reference to the specific event that triggered this history record."
+        tests:
+          - not_null
+      - name: creditable_type
+        description: "For usage-based events, the type of resource that was used (e.g., 'video')."
+      - name: creditable_id
+        description: "The unique ID of the resource that was used."
+      - name: description
+        description: "A human-readable description of the transaction."
+      - name: label
+        description: "A short label for display in user interfaces."
+      - name: calculative_index
+        description: "An index used for internal calculation logic."
+      - name: event_value
+        description: "The display value of the event (e.g., '+10', '-5')."
+      - name: amount
+        description: "The actual number of credits added or subtracted."
+      - name: previous_amount
+        description: "The user's credit balance before this transaction occurred."
+      - name: credit_history_event_type
+        description: "The type of transaction, either 'debit' or 'credit'."
+      - name: meta_data
+        description: "A JSON string containing any additional metadata." 
