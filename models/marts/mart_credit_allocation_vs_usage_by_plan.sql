@@ -1,5 +1,15 @@
 {{ config(materialized='table', schema='marts') }}
 
+/*
+============================================================================================
+  Credit Allocation vs Usage by Plan Tier
+  ---------------------------------------
+  This model compares credit allocation and usage across different plan tiers.
+  
+  REFACTORED: Now uses int_plans_with_tiers for DRY plan tier logic.
+============================================================================================
+*/
+
 WITH alloc_by_tier AS (
   SELECT
     plan_tier,
@@ -20,18 +30,12 @@ usage_with_plan AS (
     ON cmu.user_id = s.customer
    AND DATE_TRUNC(s.current_period_start, MONTH) = cmu.month
    AND s.status = 'active'
-  JOIN (
-    SELECT
-      stripe_id   AS plan_stripe_id,
-      CASE
-        WHEN amount >= 5000 AND `interval` = 'month' THEN 'Pro'
-        WHEN amount < 5000 AND `interval` = 'month' THEN 'Basic'
-        WHEN `interval` = 'year' THEN 'Enterprise'
-        ELSE 'Other'
-      END AS plan_tier
-    FROM {{ ref('plans') }}
-  ) pl
-    ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = pl.plan_stripe_id
+  JOIN {{ ref('int_plans_with_tiers') }} pl
+    ON COALESCE(
+      JSON_EXTRACT_SCALAR(s.plan_data, '$.id'),
+      JSON_EXTRACT_SCALAR(s.items_data, '$[0].plan.id'),
+      JSON_EXTRACT_SCALAR(s.items_data, '$[0].price.id')
+    ) = pl.plan_stripe_id
 ),
 
 usage_by_tier AS (

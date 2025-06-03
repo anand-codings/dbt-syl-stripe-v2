@@ -10,7 +10,7 @@ WITH usage_events AS (
   FROM {{ ref('credit_histories') }} ch
   JOIN {{ ref('credit_events') }} ce
     ON ch.credit_event_id = ce.credit_event_id
-  WHERE ce.event_type = 'usage'
+  WHERE ce.event_type = '2'
   GROUP BY ch.user_id, DATE_TRUNC(ch.created_at_ts, MONTH), ch.creditable_type
 )
 

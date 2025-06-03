@@ -2,7 +2,7 @@ version: 2
 sources:
   - name: stripe
     database: data-engineering-big-query
-    schema: stripe_v3
+    schema: raw_stripe
     tables:
       - name: charges_view
         description: "Stripe charge records from BigQuery"

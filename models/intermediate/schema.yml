@@ -1,0 +1,103 @@
+version: 2
+
+models:
+  - name: int_customer_active_periods
+    description: >
+      Unified charge expansion logic that expands each paid charge to determine
+      all the months and years a subscription is considered "active" for a customer.
+      This consolidates logic previously duplicated across multiple MRR and lifecycle models.
+    columns:
+      - name: customer_id
+        description: Unique identifier for the customer
+        tests:
+          - not_null
+      - name: activity_month
+        description: Month during which the customer was active (based on charge coverage)
+        tests:
+          - not_null
+      - name: activity_year
+        description: Year during which the customer was active (based on charge coverage)
+        tests:
+          - not_null
+      - name: billing_cycle_type
+        description: Type of billing cycle (Monthly, Annual, etc.)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Monthly', 'Annual']
+      - name: charge_created_at
+        description: Original timestamp when the charge was created
+      - name: amount_captured
+        description: Amount captured from the charge (in cents)
+
+  - name: int_plans_with_tiers
+    description: >
+      Centralized plan tier categorization logic that consolidates tier definitions
+      from both plans and prices tables. Eliminates duplication across credit-related models.
+    columns:
+      - name: plan_stripe_id
+        description: Stripe ID for the plan/price
+        tests:
+          - not_null
+          - unique
+      - name: plan_tier
+        description: Categorized plan tier (Pro, Basic, Enterprise, Other)
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Pro', 'Basic', 'Enterprise', 'Other']
+      - name: amount
+        description: Plan amount in cents
+      - name: billing_interval
+        description: Billing interval (month, year, etc.)
+      - name: source_table
+        description: Source table (plans or prices)
+        tests:
+          - accepted_values:
+              values: ['plans', 'prices']
+
+  - name: int_customer_latest_subscription
+    description: >
+      Each customer's latest/primary subscription information with intelligent ranking
+      that prioritizes active subscriptions. Extracted from customer segmentation logic
+      for reuse across multiple models.
+    columns:
+      - name: customer_id
+        description: Unique identifier for the customer
+        tests:
+          - not_null
+          - unique
+      - name: subscription_id
+        description: ID of the customer's latest subscription
+      - name: subscription_status
+        description: Status of the latest subscription
+      - name: plan_stripe_id
+        description: Stripe ID of the plan for the latest subscription
+      - name: plan_name
+        description: Name/nickname of the plan
+      - name: plan_billing_interval
+        description: Billing interval of the plan
+
+  - name: int_customer_tenure
+    description: >
+      Customer tenure calculations based on first paid charge and subscription dates.
+      Provides standardized tenure segments and metrics for reuse across models.
+    columns:
+      - name: customer_id
+        description: Unique identifier for the customer
+        tests:
+          - not_null
+          - unique
+      - name: first_paid_charge_date
+        description: Date of the customer's first paid charge
+      - name: first_subscription_date
+        description: Date of the customer's first subscription
+      - name: tenure_segment
+        description: Categorized tenure segment based on months since first charge
+        tests:
+          - accepted_values:
+              values: ['No Paid Charges', '0-5 Months Tenure', '6-11 Months Tenure', '12-23 Months Tenure', '24+ Months Tenure']
+      - name: months_since_first_charge
+        description: Number of months since first paid charge
+      - name: months_subscribed
+        description: Number of months since first subscription (includes first month) 

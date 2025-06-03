@@ -19,7 +19,7 @@
 - ✅ Connection test successful: `dbt debug` shows "Connection test: [OK]"
 
 ### 4. Source Data Configuration
-- ✅ Updated `models/src/stripe_sources.yml` to point to `data-engineering-big-query.stripe_v3`
+- ✅ Updated `models/src/stripe_sources.yml` to point to `data-engineering-big-query.raw_stripe`
 - ✅ All source tables properly configured and accessible
 
 ### 5. Project Validation & Testing
@@ -99,7 +99,7 @@ dbt run --select staging+
 
 ### BigQuery Connection
 - **Project**: `data-engineering-big-query`
-- **Source Dataset**: `stripe_v3`
+- **Source Dataset**: `raw_stripe`
 - **Target Dataset**: `syl` (dev), `syl_dw_prod` (prod)
 - **Authentication**: OAuth (Google Cloud SDK)
 - **Location**: US

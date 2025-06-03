@@ -15,6 +15,8 @@
     - Churned: Became inactive after being active the previous month
   
   The results provide insights into customer acquisition, retention, and churn patterns.
+  
+  REFACTORED: Now uses int_customer_active_periods for DRY charge expansion logic.
 ============================================================================================
 */
 
@@ -52,36 +54,16 @@ customer_monthly_trial_activity AS (
 ),
 
 customer_monthly_activity AS (
-    -- Determine each month a customer had paid activity, based on charges covering that month.
-    -- This uses charge expansion logic similar to your existing MRR marts.
+    /*
+      REFACTORED: Use the centralized charge expansion logic from intermediate model.
+      Filter for the analysis window and get monthly activity.
+    */
     SELECT DISTINCT
-        cv.customer AS customer_id,
-        expanded_months AS covered_month
-    FROM {{ ref('charges_view') }} cv
-    JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer -- As per existing mart patterns
-    JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id -- As per existing mart patterns
-    CROSS JOIN UNNEST(GENERATE_DATE_ARRAY(
-        DATE_TRUNC(DATE(cv.created), MONTH), -- Start month of charge coverage
-        DATE_TRUNC( -- End month (exclusive for GENERATE_DATE_ARRAY)
-            DATE_ADD(
-                DATE(cv.created),
-                INTERVAL
-                    CASE
-                        WHEN p.interval = 'year' THEN p.interval_count * 12
-                        WHEN p.interval = 'month' THEN p.interval_count
-                        ELSE 1 -- Default to 1 month if interval is unusual/not set (e.g., 'day', 'week')
-                    END
-                MONTH
-            ),
-            MONTH
-        ),
-        INTERVAL 1 MONTH
-    )) AS expanded_months
-    WHERE
-        cv.paid = TRUE
-        -- Optimization: Only process charges that could fall into the date_spine range + buffer for lag
-        AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 38 MONTH), MONTH) -- Lookback + buffer
-        AND DATE(cv.created) < DATE_TRUNC(CURRENT_DATE(), MONTH) -- Exclude charges from the current, incomplete month
+        customer_id,
+        activity_month AS covered_month
+    FROM {{ ref('int_customer_active_periods') }}
+    WHERE activity_month >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 38 MONTH), MONTH) -- Lookback + buffer
+      AND activity_month < DATE_TRUNC(CURRENT_DATE(), MONTH) -- Exclude current incomplete month
 ),
 
 customer_first_active_month AS (

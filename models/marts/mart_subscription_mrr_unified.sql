@@ -13,6 +13,9 @@
   
   Combined in a single table with period_type to distinguish between monthly/annual views.
   Includes active subscribers, revenue breakdown, and ARPU calculations.
+  
+  REFACTORED: Now uses int_customer_active_periods for DRY charge expansion logic.
+  This eliminates the duplicated monthly/annual CTEs and makes the model much simpler.
 ============================================================================================
 */
 
@@ -54,133 +57,59 @@ all_periods AS (
   SELECT * FROM annual_periods
 ),
 
-charges_expanded_monthly AS (
-  /*
-    Expand charges for monthly analysis
-  */
-  SELECT
-    cv.customer AS customer_id,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    month_start AS period_start,
-    'monthly' AS period_type
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  CROSS JOIN UNNEST(GENERATE_DATE_ARRAY(
-    DATE_TRUNC(DATE(cv.created), MONTH),
-    DATE_TRUNC(
-      DATE_ADD(
-        DATE(cv.created),
-        INTERVAL CASE 
-          WHEN p.interval = 'year' THEN p.interval_count * 12
-          WHEN p.interval = 'month' THEN p.interval_count
-          ELSE 1
-        END MONTH
-      ),
-      MONTH
-    ),
-    INTERVAL 1 MONTH
-  )) AS month_start
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 24 MONTH), MONTH)
-),
-
-charges_expanded_annual AS (
-  /*
-    Expand charges for annual analysis
-  */
-  SELECT
-    cv.customer AS customer_id,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    year_start AS period_start,
-    'annual' AS period_type
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  CROSS JOIN UNNEST(GENERATE_DATE_ARRAY(
-    DATE_TRUNC(DATE(cv.created), YEAR),
-    DATE_TRUNC(
-      DATE_ADD(
-        DATE(cv.created),
-        INTERVAL CASE 
-          WHEN p.interval = 'year' THEN p.interval_count
-          ELSE 1
-        END YEAR
-      ),
-      YEAR
-    ),
-    INTERVAL 1 YEAR
-  )) AS year_start
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
-),
-
 charges_expanded_unified AS (
-  SELECT * FROM charges_expanded_monthly
+  /*
+    Use the centralized charge expansion logic from intermediate model.
+    Create both monthly and annual views from the same source.
+  */
+  SELECT
+    customer_id,
+    billing_cycle_type,
+    activity_month AS period_start,
+    'monthly' AS period_type
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE activity_month >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 24 MONTH), MONTH)
+    AND activity_month < DATE_TRUNC(CURRENT_DATE(), MONTH)
+  
   UNION ALL
-  SELECT * FROM charges_expanded_annual
-),
-
-revenue_monthly AS (
-  /*
-    Calculate monthly revenue
-  */
+  
   SELECT
-    DATE_TRUNC(DATE(cv.created), MONTH) AS period_start,
-    'monthly' AS period_type,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    SUM(cv.amount_captured / 100) AS revenue
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 24 MONTH), MONTH)
-    AND DATE(cv.created) < DATE_TRUNC(CURRENT_DATE(), MONTH)
-  GROUP BY 1, 2, 3
-),
-
-revenue_annual AS (
-  /*
-    Calculate annual revenue
-  */
-  SELECT
-    DATE_TRUNC(DATE(cv.created), YEAR) AS period_start,
-    'annual' AS period_type,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    SUM(cv.amount_captured / 100) AS revenue
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
-    AND DATE(cv.created) < DATE_TRUNC(CURRENT_DATE(), YEAR)
-  GROUP BY 1, 2, 3
+    customer_id,
+    billing_cycle_type,
+    activity_year AS period_start,
+    'annual' AS period_type
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE activity_year >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
+    AND activity_year < DATE_TRUNC(CURRENT_DATE(), YEAR)
 ),
 
 revenue_unified AS (
-  SELECT * FROM revenue_monthly
+  /*
+    Calculate revenue for both monthly and annual periods from the same source
+  */
+  SELECT
+    activity_month AS period_start,
+    'monthly' AS period_type,
+    billing_cycle_type,
+    SUM(amount_captured / 100) AS revenue
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE DATE(charge_created_at) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 24 MONTH), MONTH)
+    AND DATE(charge_created_at) < DATE_TRUNC(CURRENT_DATE(), MONTH)
+    AND activity_month = DATE_TRUNC(DATE(charge_created_at), MONTH)
+  GROUP BY 1, 2, 3
+  
   UNION ALL
-  SELECT * FROM revenue_annual
+  
+  SELECT
+    activity_year AS period_start,
+    'annual' AS period_type,
+    billing_cycle_type,
+    SUM(amount_captured / 100) AS revenue
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE DATE(charge_created_at) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
+    AND DATE(charge_created_at) < DATE_TRUNC(CURRENT_DATE(), YEAR)
+    AND activity_year = DATE_TRUNC(DATE(charge_created_at), YEAR)
+  GROUP BY 1, 2, 3
 )
 
 SELECT
@@ -221,36 +150,15 @@ SELECT
           + COALESCE(MAX(CASE WHEN ru.billing_cycle_type = 'Annual' THEN ru.revenue END), 0)) / 
          COUNT(DISTINCT ce.customer_id)
     ELSE 0 
-  END) AS INT64)) AS total_arpu,
-  
-  -- Additional calculated metrics - Formatted with commas
-  CASE 
-    WHEN ap.period_type = 'monthly' THEN 
-      FORMAT("$%'d", CAST(ROUND(COALESCE(MAX(CASE WHEN ru.billing_cycle_type = 'Monthly' THEN ru.revenue END), 0) 
-        + COALESCE(MAX(CASE WHEN ru.billing_cycle_type = 'Annual' THEN ru.revenue END), 0)) AS INT64))
-    ELSE NULL 
-  END AS monthly_mrr,
-  
-  CASE 
-    WHEN ap.period_type = 'annual' THEN 
-      FORMAT("$%'d", CAST(ROUND((COALESCE(MAX(CASE WHEN ru.billing_cycle_type = 'Monthly' THEN ru.revenue END), 0) * 12)
-        + COALESCE(MAX(CASE WHEN ru.billing_cycle_type = 'Annual' THEN ru.revenue END), 0)) AS INT64))
-    ELSE NULL 
-  END AS annual_recurring_revenue
+  END) AS INT64)) AS total_arpu
 
 FROM all_periods ap
 LEFT JOIN charges_expanded_unified ce
-  ON ce.period_start = ap.period_start 
+  ON ce.period_start = ap.period_start
   AND ce.period_type = ap.period_type
 LEFT JOIN revenue_unified ru
-  ON ru.period_start = ap.period_start 
+  ON ru.period_start = ap.period_start
   AND ru.period_type = ap.period_type
 
-GROUP BY 
-  ap.period_start, 
-  ap.period_type, 
-  ap.period_year, 
-  ap.period_month
-ORDER BY 
-  ap.period_type, 
-  ap.period_start 
+GROUP BY ap.period_start, ap.period_type, ap.period_year, ap.period_month
+ORDER BY ap.period_type, ap.period_start 

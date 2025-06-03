@@ -11,6 +11,8 @@
     - Number of active subscribers (monthly, annual, and total)
     - Total revenue, monthly-plan revenue, and annual-plan revenue
   The results are suitable for time series analysis, dashboards, or financial reporting.
+  
+  REFACTORED: Now uses int_customer_active_periods for DRY charge expansion logic.
 ============================================================================================
 */
 
@@ -28,39 +30,16 @@ WITH months AS (
 
 charges_expanded AS (
   /*
-    2. Expand each paid charge into the months it "covers",
-       tagging with its billing cycle (Monthly/Annual).
-       This allows correct subscriber counts for each cycle by month.
+    2. Use the centralized charge expansion logic from intermediate model.
+       Filter for the last 12 months and get monthly activity.
   */
   SELECT
-    cv.customer AS customer_id,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    month_start
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  CROSS JOIN UNNEST(GENERATE_DATE_ARRAY(
-    DATE_TRUNC(DATE(cv.created), MONTH),
-    DATE_TRUNC(
-      DATE_ADD(
-        DATE(cv.created),
-        INTERVAL CASE 
-          WHEN p.interval = 'year' THEN p.interval_count * 12
-          WHEN p.interval = 'month' THEN p.interval_count
-          ELSE 1
-        END MONTH
-      ),
-      MONTH
-    ),
-    INTERVAL 1 MONTH
-  )) AS month_start
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH), MONTH)
+    customer_id,
+    billing_cycle_type,
+    activity_month as month_start
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE activity_month >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH), MONTH)
+    AND activity_month < DATE_TRUNC(CURRENT_DATE(), MONTH)
 ),
 
 revenue_per_month AS (
@@ -70,20 +49,13 @@ revenue_per_month AS (
        This is for accurate, cycle-specific financial reporting.
   */
   SELECT
-    DATE_TRUNC(DATE(cv.created), MONTH) AS month_start,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    SUM(cv.amount_captured / 100) AS revenue -- Revenue in dollars
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH), MONTH)
-    AND DATE(cv.created) < DATE_TRUNC(CURRENT_DATE(), MONTH)
+    activity_month AS month_start,
+    billing_cycle_type,
+    SUM(amount_captured / 100) AS revenue -- Revenue in dollars
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE DATE(charge_created_at) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 12 MONTH), MONTH)
+    AND DATE(charge_created_at) < DATE_TRUNC(CURRENT_DATE(), MONTH)
+    AND activity_month = DATE_TRUNC(DATE(charge_created_at), MONTH) -- Only count revenue in the month it was charged
   GROUP BY 1, 2
 )
 

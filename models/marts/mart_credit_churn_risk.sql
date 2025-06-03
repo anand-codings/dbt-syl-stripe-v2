@@ -1,5 +1,16 @@
 {{ config(materialized='table', schema='marts') }}
 
+/*
+============================================================================================
+  Credit Churn Risk Analysis
+  --------------------------
+  This model identifies customers at risk of churning based on low credit balances
+  and tracks actual churn events.
+  
+  REFACTORED: Now uses int_plans_with_tiers for DRY plan tier logic.
+============================================================================================
+*/
+
 WITH balance_cte AS (
   SELECT
     user_id,
@@ -24,18 +35,6 @@ subs_cte AS (
     DATE_TRUNC(s.current_period_end, MONTH)  AS as_of_month
   FROM {{ ref('subscriptions') }} s
   WHERE s.status = 'active'
-),
-
-plan_cte AS (
-  SELECT
-    stripe_id   AS plan_stripe_id,
-    CASE
-      WHEN amount >= 5000 AND `interval` = 'month' THEN 'Pro'
-      WHEN amount < 5000 AND `interval` = 'month' THEN 'Basic'
-      WHEN `interval` = 'year' THEN 'Enterprise'
-      ELSE 'Other'
-    END AS plan_tier
-  FROM {{ ref('plans') }}
 )
 
 SELECT
@@ -55,7 +54,7 @@ FROM balance_cte bc
 LEFT JOIN subs_cte s
   ON bc.user_id = s.user_id
  AND bc.month   = DATE(s.as_of_month)
-LEFT JOIN plan_cte p
+LEFT JOIN {{ ref('int_plans_with_tiers') }} p
   ON s.plan_stripe_id = p.plan_stripe_id
 LEFT JOIN churn_cte ct
   ON bc.user_id = ct.user_id

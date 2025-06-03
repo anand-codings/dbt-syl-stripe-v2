@@ -12,6 +12,8 @@
     - Total revenue, monthly-plan revenue, and annual-plan revenue
     - Average revenue per user (ARPU) by billing cycle
   The results are suitable for long-term trend analysis and strategic planning.
+  
+  REFACTORED: Now uses int_customer_active_periods for DRY charge expansion logic.
 ============================================================================================
 */
 
@@ -29,38 +31,16 @@ WITH years AS (
 
 charges_expanded AS (
   /*
-    2. Expand each paid charge into the years it "covers",
-       tagging with its billing cycle (Monthly/Annual).
-       This allows correct subscriber counts for each cycle by year.
+    2. Use the centralized charge expansion logic from intermediate model.
+       Filter for the last 5 years and get annual activity.
   */
   SELECT
-    cv.customer AS customer_id,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    year_start
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  CROSS JOIN UNNEST(GENERATE_DATE_ARRAY(
-    DATE_TRUNC(DATE(cv.created), YEAR),
-    DATE_TRUNC(
-      DATE_ADD(
-        DATE(cv.created),
-        INTERVAL CASE 
-          WHEN p.interval = 'year' THEN p.interval_count
-          ELSE 1
-        END YEAR
-      ),
-      YEAR
-    ),
-    INTERVAL 1 YEAR
-  )) AS year_start
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
+    customer_id,
+    billing_cycle_type,
+    activity_year as year_start
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE activity_year >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
+    AND activity_year < DATE_TRUNC(CURRENT_DATE(), YEAR)
 ),
 
 revenue_per_year AS (
@@ -70,21 +50,14 @@ revenue_per_year AS (
        This is for accurate, cycle-specific financial reporting.
   */
   SELECT
-    DATE_TRUNC(DATE(cv.created), YEAR) AS year_start,
-    CASE 
-      WHEN p.interval = 'month' THEN 'Monthly'
-      WHEN p.interval = 'year' THEN 'Annual'
-      ELSE INITCAP(p.interval)
-    END AS billing_cycle_type,
-    SUM(cv.amount_captured / 100) AS revenue, -- Revenue in dollars
-    COUNT(DISTINCT cv.customer) AS paying_customers
-  FROM {{ ref('charges_view') }} cv
-  JOIN {{ ref('subscriptions') }} s ON cv.customer = s.customer
-  JOIN {{ ref('plans') }} p ON JSON_EXTRACT_SCALAR(s.plan_data, '$.id') = p.stripe_id
-  WHERE
-    cv.paid = TRUE
-    AND DATE(cv.created) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
-    AND DATE(cv.created) < DATE_TRUNC(CURRENT_DATE(), YEAR)
+    activity_year AS year_start,
+    billing_cycle_type,
+    SUM(amount_captured / 100) AS revenue, -- Revenue in dollars
+    COUNT(DISTINCT customer_id) AS paying_customers
+  FROM {{ ref('int_customer_active_periods') }}
+  WHERE DATE(charge_created_at) >= DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 5 YEAR), YEAR)
+    AND DATE(charge_created_at) < DATE_TRUNC(CURRENT_DATE(), YEAR)
+    AND activity_year = DATE_TRUNC(DATE(charge_created_at), YEAR) -- Only count revenue in the year it was charged
   GROUP BY 1, 2
 )
 
