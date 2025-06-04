@@ -87,6 +87,25 @@ The marts models provide business-ready analytics tables for subscription revenu
 
 ---
 
+### `mart_user_segment_churn_analysis`
+**Type**: Mart Table  
+**Purpose**: User segment churn analysis comparing churn rates between different content creation behaviors  
+**Materialization**: Table  
+**Grain**: One row per user segment (3 segments)  
+
+| Column Name | Data Type | Description | Business Rules |
+|-------------|-----------|-------------|----------------|
+| `segment_name` | STRING | Name of the user segment being analyzed | Primary Key, Not Null, Values: ['1. Creators Only (Avatars/Real Clones)', '2. Faceless Users', '3. All Users (Baseline)'] |
+| `total_users` | INT64 | Total number of users in this segment | Not Null |
+| `churned_users` | INT64 | Number of users who churned in this segment | Not Null |
+| `churn_rate_percentage` | FLOAT64 | Churn rate as a percentage for this segment | Not Null |
+| `retention_rate_percentage` | FLOAT64 | Retention rate as a percentage for this segment (100 - churn_rate) | Not Null |
+| `detailed_breakdown` | ARRAY<STRUCT> | Array of detailed segment breakdown showing overlap between content creation types | Contains: segment_detail, user_count, churned_count, detail_churn_rate |
+
+**Business Context**: This model enables analysis of how different content creation behaviors correlate with churn rates. It compares users who only create avatars/real clones versus users who create faceless videos, providing insights for product strategy and user retention efforts.
+
+---
+
 ### Additional Mart Models
 
 #### `mart_monthly_subscription_mrr`
@@ -101,6 +120,7 @@ The marts models provide business-ready analytics tables for subscription revenu
 - `mart_monthly_credit_allocation`: Monthly credit allocation analysis
 - `mart_monthly_credit_usage`: Monthly credit usage patterns
 - `mart_monthly_credit_balance`: Monthly credit balance tracking
+- `mart_credit_churn_usage_percentage`: Credit usage patterns when users churn
 - `mart_user_credit_trend_dashboard`: User credit trend analysis
 - `mart_credit_churn_risk`: Credit-based churn risk analysis
 - `mart_credit_allocation_vs_usage_by_plan`: Plan-based credit analysis
@@ -124,5 +144,6 @@ All models are built on top of staging models:
 ## Usage Recommendations
 - **Use `mart_subscription_mrr_unified`** for most subscription analysis use cases
 - **Use `mart_customer_churn_analysis`** for retention strategies and revenue impact
+- **Use `mart_credit_churn_usage_percentage`** for analyzing credit consumption patterns before churn
 - **Use `mart_customer_segmentation`** for targeted marketing and customer success
 - **Use `mart_customer_lifecycle_status`** for lifecycle stage analysis 

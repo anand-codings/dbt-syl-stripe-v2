@@ -14,13 +14,25 @@ The user management models handle all user-related data including user profiles,
 |-------------|-----------|-------------|----------------|
 | `user_id` | STRING | User ID. Unique identifier for the user | Primary Key |
 | `plan_id` | STRING | Reference to the subscribed plan | Foreign Key to plans |
+| `provider_id` | STRING | Reference to the provider | Foreign Key to providers |
+| `name` | STRING | Full name of the user | User identification |
+| `email` | STRING | Email address of the user | Contact information, unique |
+| `payment_method_type` | STRING | Type of payment method used by the user | Billing method |
+| `stripe_customer_id` | STRING | Stripe customer ID for payment processing | Payment integration |
 | `account_provider` | STRING | Account provider (e.g., 'google', 'email') | Authentication method |
 | `registration_code` | STRING | The registration code used during signup, if any | Referral/promo tracking |
 | `promo_code` | STRING | The promotional code used by the user, if any | Marketing attribution |
 | `user_type` | STRING | Type of user (e.g., 'admin', 'member') | Role classification |
+| `user_settings` | STRING | JSON string containing user preferences and settings | Configuration data |
+| `notification_preferences` | STRING | User notification preferences and settings | Communication settings |
+| `remember_token` | STRING | Token used for remember me functionality | Session management |
 | `remaining_credit_amount` | INT64 | User's current balance of remaining credits | Credit balance |
 | `monthly_credit_amount` | INT64 | The number of credits allocated to the user each month | Plan allocation |
 | `extra_credits` | INT64 | One-time additional credits granted to the user | Bonus credits |
+| `trial_ends_at_ts` | TIMESTAMP | Timestamp when the user trial period ends | Trial tracking |
+| `subscription_ends_at_ts` | TIMESTAMP | Timestamp when the user subscription ends | Subscription tracking |
+| `email_verified_at_dt` | DATETIME | Date and time when the user email was verified | Email verification |
+| `is_subscribed_to_mailing_list` | BOOLEAN | Whether the user is subscribed to the mailing list | Marketing communication |
 | `created_at_ts` | TIMESTAMP | Timestamp of when the user record was created | Account creation |
 | `updated_at_ts` | TIMESTAMP | Timestamp of the last update to the user record | Last modification |
 

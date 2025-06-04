@@ -12,6 +12,10 @@
   (voluntary vs payment failure) and quantifying the revenue impact through customer 
   lifetime value metrics.
 
+  REFACTORED: Now uses intermediate models for better maintainability and reusability:
+  - int_customer_lifetime_value for customer value calculations
+  - int_all_churned_users for churn identification (with time filtering)
+
   Business Questions Answered:
   - What is the monthly trend in customer churn rate?
   - How much revenue is lost due to churned customers each month?
@@ -26,12 +30,11 @@
   - voluntary_churns: Number of customers who actively requested cancellation
 
   Data Sources (Tables Used):
-  - charges_view: Source for customer payment/revenue data
-  - subscriptions: Source for subscription status and cancellation details
+  - int_customer_lifetime_value: Customer payment/revenue data
+  - subscriptions: Subscription status and cancellation details
 
   CTEs Explanation:
-  - customer_lifetime_value: Calculates total captured revenue per customer
-  - churned_customers: Identifies and categorizes churned customers in last 6 months
+  - churned_customers_6m: Identifies and categorizes churned customers in last 6 months
 
   Use Cases / Potential Insights:
   - Identify trends in churn reasons to guide retention strategies
@@ -47,33 +50,17 @@
 ============================================================================================
 */
 
-WITH
-  -- 1) Compute each customer's total (captured) charges
-  customer_lifetime_value AS (
-    SELECT
-      customer               AS customer_id,
-      SUM(amount_captured / 100) AS lifetime_value -- Convert from cents to dollars
-    FROM
-      {{ ref('charges_view') }}
-    WHERE
-      captured = TRUE
-    GROUP BY
-      customer
-  ),
-
-  -- 2) List every canceled subscription in the last 6 months
-  churned_customers AS (
-    SELECT
-      s.customer             AS customer_id,
-      DATE_TRUNC(DATE(s.canceled_at), MONTH) AS churn_month,
-      s.cancellation_details AS cancellation_reason
-    FROM
-      {{ ref('subscriptions') }} s
-    WHERE
-      s.status = 'canceled'
-      AND s.canceled_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH), MONTH))
-      AND s.canceled_at < TIMESTAMP(DATE_TRUNC(CURRENT_DATE(), MONTH)) -- Exclude current incomplete month
-  )
+WITH churned_customers_6m AS (
+  -- List every canceled subscription in the last 6 months
+  SELECT
+    s.customer             AS customer_id,
+    DATE_TRUNC(DATE(s.canceled_at), MONTH) AS churn_month,
+    s.cancellation_details AS cancellation_reason
+  FROM {{ ref('subscriptions') }} s
+  WHERE s.status = 'canceled'
+    AND s.canceled_at >= TIMESTAMP(DATE_TRUNC(DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH), MONTH))
+    AND s.canceled_at < TIMESTAMP(DATE_TRUNC(CURRENT_DATE(), MONTH)) -- Exclude current incomplete month
+)
 
 SELECT
   CASE
@@ -118,10 +105,9 @@ SELECT
     1
   ) AS voluntary_churn_pct
 
-FROM
-  churned_customers cc
-  LEFT JOIN customer_lifetime_value clv
-    ON cc.customer_id = clv.customer_id
+FROM churned_customers_6m cc
+LEFT JOIN {{ ref('int_customer_lifetime_value') }} clv
+  ON cc.customer_id = clv.customer_id
 
 GROUP BY
   ROLLUP(cc.churn_month)

@@ -60,6 +60,101 @@ This model provides standardized customer tenure calculations based on:
 - Tenure segments (0-5 months, 6-11 months, etc.)
 - Months subscribed calculations
 
+### `int_customer_lifetime_value`
+**Purpose**: Customer lifetime value calculations  
+**Replaces**: Duplicated LTV logic from customer churn analysis  
+**Used by**:
+- `mart_customer_churn_analysis`
+- Any other models needing customer value metrics
+
+This model provides comprehensive customer lifetime value metrics including:
+- Total captured revenue per customer
+- Payment frequency and tenure
+- Average payment amounts
+- Value segmentation (High/Medium/Low/Minimal)
+
+### `int_monthly_credit_transactions`
+**Purpose**: Unified monthly credit allocation and usage  
+**Replaces**: Duplicated credit transaction logic across multiple credit models  
+**Used by**:
+- `mart_monthly_credit_allocation`
+- `mart_monthly_credit_usage`
+- `mart_credit_churn_usage_percentage`
+
+This model consolidates monthly credit transaction logic including:
+- Credit allocations (positive amounts)
+- Credit usage by service type (negative amounts)
+- Net credit changes and percentage calculations
+- Service-level usage breakdown
+
+### `int_monthly_user_balances`
+**Purpose**: Monthly credit balance data  
+**Replaces**: Balance CTE logic from credit churn risk analysis  
+**Used by**:
+- `mart_credit_churn_risk`
+- Any other models needing monthly balance data
+
+This model provides standardized monthly credit balance data with consistent date formatting for joins across multiple balance-related analyses.
+
+### `int_user_active_subscriptions`
+**Purpose**: Active subscription context  
+**Replaces**: Subscription context CTE from credit churn risk analysis  
+**Used by**:
+- `mart_credit_churn_risk`
+- Any other models needing active subscription context
+
+This model provides active subscription information with plan details and monthly context, enabling consistent subscription analysis across models.
+
+### `int_all_churned_users`
+**Purpose**: All-time churn events (no time filter)  
+**Replaces**: Churn CTE logic from credit churn risk analysis  
+**Used by**:
+- `mart_credit_churn_risk`
+- `mart_credit_churn_usage_percentage`
+- `mart_user_segment_churn_analysis` (refactored)
+- `mart_customer_churn_analysis` (refactored)
+- Any other models needing all-time churn data
+
+This model complements `int_churned_users` (which has a 6-month filter) by providing all churn events without time restrictions, useful for historical churn analysis.
+
+### `int_churned_users_6m`
+**Purpose**: Recent churn events (6-month filter)  
+**Replaces**: Time-filtered churn logic from multiple churn analysis models  
+**Used by**:
+- `mart_user_segment_churn_analysis_6m`
+- Other recent churn analysis models
+
+This model provides detailed churn analysis with trial vs paid classification for recent churn events within a 6-month lookback period.
+
+### `int_content_creators_by_type`
+**Purpose**: User content creation segmentation  
+**Replaces**: Content creator logic from user segment analysis  
+**Used by**:
+- `mart_user_segment_churn_analysis` (refactored)
+- `mart_user_segment_churn_analysis_6m`
+- Any other models needing content-based user segmentation
+
+This model provides comprehensive user segmentation based on content creation activity across avatars, real clones, and faceless videos with detailed segment classifications.
+
+### `int_user_subscription_status`
+**Purpose**: User subscription status and trial/paid classification  
+**Replaces**: Subscription status logic from user analysis models  
+**Used by**:
+- `mart_user_segment_churn_analysis_6m`
+- Any other models needing user subscription context
+
+This model determines each user's subscription status and categorizes them as Trial vs Paid based on their latest subscription activity.
+
+### `int_active_users`
+**Purpose**: Active user identification  
+**Replaces**: Active user logic from user analysis models  
+**Used by**:
+- `mart_user_segment_churn_analysis` (refactored)
+- `mart_user_segment_churn_analysis_6m`
+- Any other models needing active user definitions
+
+This model identifies users who have been "active" within a specified time period based on content creation or subscription activity.
+
 ## Benefits of This Refactoring
 
 ### 1. **Reduced Maintenance Overhead**
@@ -98,5 +193,7 @@ Consider creating additional intermediate models for:
 - Geographic segmentation logic
 - Trial period expansions
 - Churn prediction features
+- Credit usage patterns and thresholds
+- Subscription lifecycle transitions
 
 This foundation makes it easy to continue applying DRY principles as the data model evolves. 

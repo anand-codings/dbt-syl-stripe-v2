@@ -81,6 +81,22 @@ This directory contains mart models for analyzing subscription Monthly Recurring
 - ARPU tracking and optimization
 - Strategic planning and forecasting
 
+### `mart_user_segment_churn_analysis`
+
+**Purpose**: Analyzes churn patterns across different user segments based on content creation behavior.
+
+**Key Metrics**:
+- Churn rate percentage
+- Retention rate percentage
+- Detailed breakdown of user behavior patterns
+
+**Grain**: One row per segment
+
+**Use Cases**:
+- User segment-based churn analysis
+- Detailed user behavior pattern analysis
+- Risk assessment compared to baseline
+
 ## Data Sources
 
 All models are built on top of the following staging models:
@@ -235,10 +251,102 @@ FROM {{ ref('mart_annual_subscription_mrr') }}
 ORDER BY year;
 ```
 
+### Credit Churn Usage Analysis
+```sql
+-- Analyze credit usage patterns when users churn
+SELECT 
+  churn_month,
+  churned_users_count,
+  avg_pct_allocation_used,
+  median_pct_allocation_used,
+  total_pct_credits_used,
+  avg_cumulative_balance_at_churn
+FROM {{ ref('mart_credit_churn_usage_percentage') }}
+ORDER BY churn_month DESC;
+```
+
+```sql
+-- Identify months with high credit usage before churn
+SELECT 
+  churn_month,
+  churned_users_count,
+  avg_pct_allocation_used,
+  CASE 
+    WHEN avg_pct_allocation_used > 80 THEN 'High Usage Churn'
+    WHEN avg_pct_allocation_used > 50 THEN 'Medium Usage Churn'
+    ELSE 'Low Usage Churn'
+  END as usage_category
+FROM {{ ref('mart_credit_churn_usage_percentage') }}
+WHERE churned_users_count > 0
+ORDER BY churn_month DESC;
+```
+
+```sql
+-- Analyze plan tier differences in churn credit usage
+SELECT 
+  churn_month,
+  tier.plan_tier,
+  tier.tier_churned_count,
+  tier.tier_avg_pct_used
+FROM {{ ref('mart_credit_churn_usage_percentage') }} ccup
+CROSS JOIN UNNEST(ccup.plan_tier_breakdown) as tier
+WHERE tier.tier_churned_count > 0
+ORDER BY churn_month DESC, tier.tier_avg_pct_used DESC;
+```
+
+### User Segment Churn Analysis
+```sql
+-- Compare churn rates between user segments based on content creation behavior
+SELECT 
+  segment_name,
+  total_users,
+  churned_users,
+  churn_rate_percentage,
+  retention_rate_percentage
+FROM {{ ref('mart_user_segment_churn_analysis') }}
+ORDER BY churn_rate_percentage DESC;
+```
+
+```sql
+-- Analyze detailed breakdown of user behavior patterns
+SELECT 
+  breakdown.segment_detail,
+  breakdown.user_count,
+  breakdown.churned_count,
+  breakdown.detail_churn_rate
+FROM {{ ref('mart_user_segment_churn_analysis') }} usa,
+UNNEST(usa.detailed_breakdown) AS breakdown
+WHERE segment_name = '3. All Users (Baseline)'
+ORDER BY breakdown.detail_churn_rate DESC;
+```
+
+```sql
+-- Risk assessment compared to baseline
+WITH baseline AS (
+  SELECT churn_rate_percentage AS baseline_churn_rate
+  FROM {{ ref('mart_user_segment_churn_analysis') }}
+  WHERE segment_name = '3. All Users (Baseline)'
+)
+SELECT
+  usa.segment_name,
+  usa.churn_rate_percentage,
+  b.baseline_churn_rate,
+  ROUND(usa.churn_rate_percentage - b.baseline_churn_rate, 2) AS churn_rate_vs_baseline,
+  CASE
+    WHEN usa.churn_rate_percentage > b.baseline_churn_rate THEN 'Higher Risk'
+    WHEN usa.churn_rate_percentage < b.baseline_churn_rate THEN 'Lower Risk'
+    ELSE 'Same as Baseline'
+  END AS risk_assessment
+FROM {{ ref('mart_user_segment_churn_analysis') }} usa
+CROSS JOIN baseline b
+WHERE usa.segment_name != '3. All Users (Baseline)';
+```
+
 ## Model Recommendations
 
 - **Use `mart_subscription_mrr_unified`** for most use cases as it provides the most comprehensive view
 - **Use `mart_customer_churn_analysis`** for churn analysis, retention strategies, and revenue impact assessment
+- **Use `mart_credit_churn_usage_percentage`** for analyzing credit consumption patterns before churn and identifying usage-based churn indicators
 - **Use `mart_monthly_subscription_mrr`** only if you specifically need just monthly data with shorter history (12 months vs 24)
 - **Use `mart_annual_subscription_mrr`** only if you specifically need just annual data
 
@@ -249,4 +357,4 @@ ORDER BY year;
 - Models use BigQuery-specific functions (GENERATE_DATE_ARRAY, JSON_EXTRACT_SCALAR)
 - Models are materialized as tables for performance
 - The unified model provides 24 months of monthly data vs 12 months in the standalone monthly model
-- Churn analysis focuses on the last 6 months to provide actionable insights while maintaining data quality 
+- Churn analysis focuses on the last 6 months to provide actionable insights while maintaining data quality

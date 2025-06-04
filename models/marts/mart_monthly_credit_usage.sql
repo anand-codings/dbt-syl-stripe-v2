@@ -1,24 +1,39 @@
 {{ config(materialized='table', schema='marts') }}
 
-WITH usage_events AS (
+/*
+============================================================================================
+  Monthly Credit Usage Analysis
+  -----------------------------
+  This model tracks monthly credit usage by users and service types based on 
+  credit_histories. It identifies credit usage events (negative amounts) and 
+  aggregates them by month and service type.
+  
+  REFACTORED: Now uses int_monthly_credit_transactions for DRY credit logic.
+  
+  Used by:
+  - mart_monthly_credit_balance
+  - mart_service_credit_efficiency
+============================================================================================
+*/
+
+WITH usage_by_service AS (
+  -- Unnest the service type breakdown from the intermediate model
   SELECT
-    ch.user_id,
-    DATE_TRUNC(ch.created_at_ts, MONTH) AS month,
-    ch.creditable_type      AS service_type,
-    SUM(ch.amount * -1)     AS credits_spent,
-    COUNT(*)                AS usage_count
-  FROM {{ ref('credit_histories') }} ch
-  JOIN {{ ref('credit_events') }} ce
-    ON ch.credit_event_id = ce.credit_event_id
-  WHERE ce.event_type = '2'
-  GROUP BY ch.user_id, DATE_TRUNC(ch.created_at_ts, MONTH), ch.creditable_type
+    user_id,
+    month,
+    service_detail.service_type,
+    service_detail.credits_spent,
+    service_detail.transaction_count AS usage_count
+  FROM {{ ref('int_monthly_credit_transactions') }} mct
+  CROSS JOIN UNNEST(mct.usage_by_service_type) AS service_detail
+  WHERE ARRAY_LENGTH(mct.usage_by_service_type) > 0
 )
 
 SELECT
-  ue.user_id,
-  ue.month,
-  ue.service_type,
-  ue.credits_spent,
-  ue.usage_count
-FROM usage_events ue
-ORDER BY ue.user_id, ue.month DESC, ue.credits_spent DESC 
+  user_id,
+  month,
+  service_type,
+  credits_spent,
+  usage_count
+FROM usage_by_service
+ORDER BY user_id, month DESC, credits_spent DESC 

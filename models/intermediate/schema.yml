@@ -100,4 +100,298 @@ models:
       - name: months_since_first_charge
         description: Number of months since first paid charge
       - name: months_subscribed
-        description: Number of months since first subscription (includes first month) 
+        description: Number of months since first subscription (includes first month)
+
+  - name: int_customer_lifetime_value
+    description: >
+      Calculates customer lifetime value metrics based on payment history. Provides
+      centralized customer value calculations that can be reused across multiple churn
+      and customer analysis models. Eliminates duplication of LTV logic.
+    columns:
+      - name: customer_id
+        description: Unique identifier for the customer
+        tests:
+          - not_null
+          - unique
+      - name: lifetime_value
+        description: Total captured revenue from the customer (in dollars)
+        tests:
+          - not_null
+      - name: total_payments
+        description: Number of successful payments made by the customer
+        tests:
+          - not_null
+      - name: avg_payment_amount
+        description: Average payment amount per transaction (in dollars)
+      - name: first_payment_date
+        description: Date of the customer's first successful payment
+      - name: last_payment_date
+        description: Date of the customer's most recent successful payment
+      - name: payment_tenure_days
+        description: Number of days between first and last payment
+      - name: avg_payments_per_month
+        description: Average number of payments per month (for customers with >30 days tenure)
+      - name: value_segment
+        description: Customer value segmentation based on lifetime value
+        tests:
+          - accepted_values:
+              values: ['High Value (>=$1000)', 'Medium Value ($500-$999)', 'Low Value ($100-$499)', 'Minimal Value (<$100)']
+
+  - name: int_monthly_credit_transactions
+    description: >
+      Provides unified view of monthly credit transactions (allocations and usage) for users.
+      Consolidates logic previously duplicated across multiple credit-related mart models.
+      Includes service-level usage breakdown and percentage calculations.
+    columns:
+      - name: user_id
+        description: Unique identifier for the user
+        tests:
+          - not_null
+      - name: month
+        description: Month of the credit transactions
+        tests:
+          - not_null
+      - name: credits_granted
+        description: Total credits allocated to the user in the month
+        tests:
+          - not_null
+      - name: credits_spent
+        description: Total credits used by the user in the month
+        tests:
+          - not_null
+      - name: net_credit_change
+        description: Net change in credits for the month (granted - spent)
+      - name: allocation_count
+        description: Number of credit allocation transactions in the month
+      - name: usage_count
+        description: Number of credit usage transactions in the month
+      - name: pct_monthly_allocation_used
+        description: Percentage of monthly allocation used (0-100)
+      - name: usage_by_service_type
+        description: Array of service-level usage breakdown with credits spent and transaction counts
+
+  - name: int_user_subscription_status
+    description: >
+      Determines each user's subscription status and categorizes them as Trial vs Paid
+      based on their latest subscription activity. Extracted from churn analysis logic
+      for reuse across multiple user analysis models.
+    columns:
+      - name: user_id
+        description: Unique identifier for the user (cast as string)
+        tests:
+          - not_null
+          - unique
+      - name: customer
+        description: Stripe customer ID associated with the user
+      - name: subscription_status
+        description: Current subscription status from Stripe
+        tests:
+          - accepted_values:
+              values: ['active', 'trialing', 'past_due', 'canceled', 'incomplete', 'incomplete_expired']
+      - name: user_type
+        description: Categorized user type based on subscription status and trial timing
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Trial', 'Paid', 'Other']
+      - name: trial_start
+        description: Trial start date if applicable
+      - name: trial_end
+        description: Trial end date if applicable
+      - name: subscription_created
+        description: Date when the subscription was created
+      - name: canceled_at
+        description: Date when the subscription was canceled (if applicable)
+
+  - name: int_content_creators_by_type
+    description: >
+      Identifies users based on their content creation activity across different content types
+      (avatars, real clones, faceless videos). Provides user segmentation foundation with
+      flexible time period filtering.
+    columns:
+      - name: user_id
+        description: Unique identifier for the user
+        tests:
+          - not_null
+          - unique
+      - name: content_types_created
+        description: Array of content types the user has created
+      - name: total_content_count
+        description: Total number of content pieces created by the user
+      - name: earliest_creation_date
+        description: Date of the user's first content creation
+      - name: latest_creation_date
+        description: Date of the user's most recent content creation
+      - name: created_avatars
+        description: Flag indicating if user created avatars (1/0)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: created_real_clones
+        description: Flag indicating if user created real clones (1/0)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: created_faceless
+        description: Flag indicating if user created faceless videos (1/0)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: primary_segment
+        description: Primary user segment based on content creation
+        tests:
+          - accepted_values:
+              values: ['faceless_user', 'creator_only', 'other']
+      - name: detailed_segment
+        description: Detailed segment classification for precise analysis
+        tests:
+          - accepted_values:
+              values: ['both_faceless_and_creators', 'faceless_only', 'creators_only', 'no_content']
+      - name: analysis_start_date
+        description: Start date of the analysis period
+      - name: analysis_end_date
+        description: End date of the analysis period
+
+  - name: int_active_users
+    description: >
+      Identifies users who have been "active" within a specified time period based on
+      content creation or subscription activity. Provides consistent active user
+      definition across different analyses.
+    columns:
+      - name: user_id
+        description: Unique identifier for the active user
+        tests:
+          - not_null
+          - unique
+      - name: activity_types
+        description: Array of activity types the user engaged in
+      - name: earliest_activity_date
+        description: Date of the user's first activity in the period
+      - name: latest_activity_date
+        description: Date of the user's most recent activity in the period
+      - name: activity_type_count
+        description: Number of different activity types the user engaged in
+      - name: has_content_activity
+        description: Flag indicating if user created content (1/0)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: has_subscription_activity
+        description: Flag indicating if user had subscription activity (1/0)
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: activity_classification
+        description: Classification of user's activity pattern
+        tests:
+          - accepted_values:
+              values: ['content_and_subscription', 'content_only', 'subscription_only', 'other']
+      - name: analysis_start_date
+        description: Start date of the analysis period
+      - name: analysis_end_date
+        description: End date of the analysis period
+
+  - name: int_monthly_user_balances
+    description: >
+      Provides monthly credit balance data for users, extracted from the credit churn
+      risk analysis for reuse across multiple balance-related models. Standardizes
+      date format for consistent joins.
+    columns:
+      - name: user_id
+        description: Unique identifier for the user
+        tests:
+          - not_null
+      - name: month
+        description: Month for the balance record (standardized DATE format)
+        tests:
+          - not_null
+      - name: end_of_month_balance
+        description: Cumulative credit balance at the end of the month
+
+  - name: int_user_active_subscriptions
+    description: >
+      Provides active subscription context for users, extracted from the credit churn
+      risk analysis for reuse across multiple subscription-related models. Includes
+      plan information and monthly context.
+    columns:
+      - name: user_id
+        description: Unique identifier for the user
+        tests:
+          - not_null
+      - name: plan_stripe_id
+        description: Stripe ID of the subscription plan
+      - name: as_of_month
+        description: Month context based on subscription period end (DATE_TRUNC format)
+
+  - name: int_all_churned_users
+    description: >
+      Identifies all users who have churned (canceled subscriptions) without any time
+      period filtering. Complements int_churned_users which has a 6-month lookback filter.
+      Provides simplified churn timing for temporal analysis.
+      
+      Used by:
+      - mart_credit_churn_risk
+      - mart_credit_churn_usage_percentage
+      - Any other models needing all-time churn data
+    columns:
+      - name: user_id
+        description: Unique identifier for the churned user
+        tests:
+          - not_null
+      - name: churn_month
+        description: Month when the subscription was canceled (DATE_TRUNC format)
+        tests:
+          - not_null
+      - name: canceled_at
+        description: Exact timestamp when the subscription was canceled
+        tests:
+          - not_null
+      - name: status
+        description: Subscription status (should be 'canceled')
+        tests:
+          - accepted_values:
+              values: ['canceled']
+
+  - name: int_churned_users_6m
+    description: >
+      Identifies users who have churned (canceled subscriptions) within the last 6 months
+      and classifies whether they churned from Trial or Paid status. Time-filtered version
+      of the general churn logic for 6-month lookback analyses.
+    columns:
+      - name: user_id
+        description: Unique identifier for the churned user
+        tests:
+          - not_null
+      - name: customer
+        description: Stripe customer ID associated with the user
+      - name: canceled_at
+        description: Date when the subscription was canceled
+        tests:
+          - not_null
+      - name: status
+        description: Subscription status (should be 'canceled')
+        tests:
+          - accepted_values:
+              values: ['canceled']
+      - name: trial_start
+        description: Trial start date if applicable
+      - name: trial_end
+        description: Trial end date if applicable
+      - name: subscription_created
+        description: Date when the subscription was created
+      - name: churned_from_type
+        description: Whether the user churned from Trial or Paid status
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Trial', 'Paid', 'Other']
+      - name: subscription_duration_days
+        description: Total days the subscription was active before churn
+      - name: trial_duration_days
+        description: Duration of trial period in days (0 if no trial)
+      - name: days_from_trial_reference
+        description: Days from trial start (if churned during trial) or trial end (if churned after)
+      - name: analysis_start_date
+        description: Start date of the analysis period
+      - name: analysis_end_date
+        description: End date of the analysis period 

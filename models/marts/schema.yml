@@ -139,7 +139,7 @@ models:
       - name: annual_recurring_revenue
         description: "Annual Recurring Revenue - only populated for annual periods (in dollars)"
 
-  - name: mart_customer_churn_analysis
+  - name: mart_monthly_customer_churn_analysis
     description: "Monthly customer churn and revenue impact analysis for the last 6 months, segmenting by churn type and quantifying revenue impact through customer lifetime value metrics"
     columns:
       - name: churn_month
@@ -242,4 +242,93 @@ models:
       - name: customer_created_at
         description: "Timestamp when customer was created"
         tests:
-          - not_null 
+          - not_null
+
+  - name: mart_monthly_credit_allocation
+    description: "Monthly credit allocation analysis tracking credit grants to users from credit_histories"
+    columns:
+      - name: user_id
+        description: "User ID who received the credit allocation"
+        tests:
+          - not_null
+      - name: month
+        description: "Month when credits were allocated (first day of month)"
+        tests:
+          - not_null
+      - name: credits_granted
+        description: "Total number of credits allocated to the user in this month"
+        tests:
+          - not_null
+      - name: allocation_count
+        description: "Number of allocation events for this user in this month"
+        tests:
+          - not_null
+
+  - name: mart_credit_churn_usage_percentage
+    description: "Analysis of credit balances when users churned, showing how many credits users had left when they canceled their subscriptions"
+    columns:
+      - name: user_id
+        description: "Unique identifier for the churned user"
+        tests:
+          - not_null
+      - name: churn_date
+        description: "Date when the user's subscription was canceled"
+        tests:
+          - not_null
+      - name: churned_from_type
+        description: "Whether the user churned from Trial or Paid status"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Trial', 'Paid', 'Other']
+      - name: subscription_duration_days
+        description: "Number of days the subscription was active before churn"
+        tests:
+          - not_null
+      - name: credit_balance_at_churn
+        description: "Number of credits the user had at the time of churn"
+        tests:
+          - not_null
+      - name: current_credit_balance
+        description: "User's current credit balance from the users table (for comparison)"
+      - name: monthly_credit_allocation
+        description: "User's monthly credit allocation amount"
+      - name: days_since_last_usage_before_churn
+        description: "Number of days between last credit usage and churn date"
+      - name: days_since_last_allocation_before_churn
+        description: "Number of days between last credit allocation and churn date"
+      - name: pct_monthly_allocation_remaining_at_churn
+        description: "Percentage of monthly allocation remaining at churn time"
+      - name: credit_balance_category_at_churn
+        description: "Categorized credit balance level at churn"
+        tests:
+          - accepted_values:
+              values: ['No Credits Left', 'Low Credits (1-10)', 'Medium Credits (11-50)', 'High Credits (50+)', 'Unknown']
+
+  - name: mart_user_segment_churn_analysis
+    description: "User segment churn analysis comparing churn rates between users who only create avatars/real clones versus users who create faceless videos, with detailed breakdown of user behavior patterns"
+    columns:
+      - name: segment_name
+        description: "Name of the user segment being analyzed"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['1. Creators Only (Avatars/Real Clones)', '2. Faceless Users', '3. All Users (Baseline)']
+      - name: total_users
+        description: "Total number of users in this segment"
+        tests:
+          - not_null
+      - name: churned_users
+        description: "Number of users who churned in this segment"
+        tests:
+          - not_null
+      - name: churn_rate_percentage
+        description: "Churn rate as a percentage for this segment"
+        tests:
+          - not_null
+      - name: retention_rate_percentage
+        description: "Retention rate as a percentage for this segment (100 - churn_rate)"
+        tests:
+          - not_null
+      - name: detailed_breakdown
+        description: "Array of detailed segment breakdown showing overlap between content creation types and their respective churn rates" 

@@ -9,8 +9,6 @@
   all the months a subscription is considered "active" for a customer.
   
   This model is used by:
-  - mart_monthly_subscription_mrr
-  - mart_annual_subscription_mrr  
   - mart_subscription_mrr_unified
   - mart_customer_lifecycle_status
 ============================================================================================
